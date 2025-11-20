@@ -1,7 +1,8 @@
-import { useState } from "react";
-import { Form, redirect, useActionData, useNavigation } from "react-router-dom";
-import { createOrder } from "../../services/apiRestaurant";
-import Button from "../../ui/Button";
+import { useState } from 'react';
+import { Form, redirect, useActionData, useNavigation } from 'react-router-dom';
+import { createOrder } from '../../services/apiRestaurant';
+import Button from '../../ui/Button';
+import { useSelector } from 'react-redux';
 
 // https://uibakery.io/regex-library/phone-number
 const isValidPhone = (str) =>
@@ -12,21 +13,21 @@ const isValidPhone = (str) =>
 const fakeCart = [
   {
     pizzaId: 12,
-    name: "Mediterranean",
+    name: 'Mediterranean',
     quantity: 2,
     unitPrice: 16,
     totalPrice: 32,
   },
   {
     pizzaId: 6,
-    name: "Vegetale",
+    name: 'Vegetale',
     quantity: 1,
     unitPrice: 13,
     totalPrice: 13,
   },
   {
     pizzaId: 11,
-    name: "Spinach and Mushroom",
+    name: 'Spinach and Mushroom',
     quantity: 1,
     unitPrice: 15,
     totalPrice: 15,
@@ -34,8 +35,10 @@ const fakeCart = [
 ];
 
 function CreateOrder() {
+  const username = useSelector((state) => state.user.username);
+
   const navigation = useNavigation();
-  const isSubmitting = navigation.state === "submitting";
+  const isSubmitting = navigation.state === 'submitting';
 
   const formErrors = useActionData();
 
@@ -46,39 +49,46 @@ function CreateOrder() {
     <div className="px-4 py-6">
       <h2 className="mb-8 text-xl font-semibold">Ready to order? Let's go!</h2>
 
+      {/* <Form method="POST" action="/order/new"> */}
       <Form method="POST">
-        <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-center">
-          <label className="basis-40">First Name</label>
-          <input className="input grow" type="text" name="customer" required />
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="sm:basis-40">First Name</label>
+          <input
+            className="input grow"
+            type="text"
+            name="customer"
+            required
+            defaultValue={username}
+          />
         </div>
 
-        <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-center">
-          <label className="basis-40">Phone number</label>
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="sm:basis-40">Phone number</label>
           <div className="grow">
-            <input className="w-full input" type="tel" name="phone" required />
+            <input className="input w-full" type="tel" name="phone" required />
             {formErrors?.phone && (
-              <p className="p-2 mt-2 text-xs text-red-700 bg-red-100 rounded-md">
+              <p className="mt-2 rounded-md bg-red-100 p-2 text-xs text-red-700">
                 {formErrors.phone}
               </p>
             )}
           </div>
         </div>
 
-        <div className="flex flex-col gap-2 mb-5 sm:flex-row sm:items-center">
-          <label className="basis-40">Address</label>
+        <div className="mb-5 flex flex-col gap-2 sm:flex-row sm:items-center">
+          <label className="sm:basis-40">Address</label>
           <div className="grow">
             <input
+              className="input w-full"
               type="text"
               name="address"
               required
-              className="w-full input"
             />
           </div>
         </div>
 
-        <div className="flex items-center gap-5 mb-12">
+        <div className="mb-12 flex items-center gap-5">
           <input
-            className="w-6 h-6 accent-yellow-400 focus:outline-none focus:ring focus:ring-yellow-400 focus:ring-offset-2"
+            className="h-6 w-6 accent-yellow-400 focus:outline-none focus:ring focus:ring-yellow-400 focus:ring-offset-2"
             type="checkbox"
             name="priority"
             id="priority"
@@ -92,8 +102,8 @@ function CreateOrder() {
 
         <div>
           <input type="hidden" name="cart" value={JSON.stringify(cart)} />
-          <Button type="primary" disabled={isSubmitting} className="">
-            {isSubmitting ? "Placing order..." : "Order now"}
+          <Button disabled={isSubmitting} type="primary">
+            {isSubmitting ? 'Placing order....' : 'Order now'}
           </Button>
         </div>
       </Form>
@@ -107,21 +117,24 @@ export async function action({ request }) {
 
   const order = {
     ...data,
-    priority: data.priority === "on",
     cart: JSON.parse(data.cart),
+    priority: data.priority === 'on',
   };
 
   const errors = {};
   if (!isValidPhone(order.phone))
     errors.phone =
-      "Please give us your correct phone number. We might need it contact you";
+      'Please give us your correct phone number. We might need it to contact you.';
 
   if (Object.keys(errors).length > 0) return errors;
 
-  // If everything is correct, create new order and redirect
+  // If everything is okay, create new order and redirect
+
   const newOrder = await createOrder(order);
 
   return redirect(`/order/${newOrder.id}`);
+
+  return null;
 }
 
 export default CreateOrder;
